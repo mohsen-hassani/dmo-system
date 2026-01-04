@@ -175,18 +175,19 @@ def show_today_page() -> None:
                         st.markdown(f"*Note: {note}*")
 
                 dmo_report = [d for d in month_report if d["dmo"]["id"] == dmo["id"]][0]
-                # Normalize days
-                days_report = [d["completed"] for d in dmo_report["days"]]
-                print(days_report)
-                cols = st.columns([1] * len(dmo_report["days"]))
-                for i, col in enumerate(cols):
-                    with col:
-                        rep = dmo_report["days"][i]
-                        status_icon = "✅" if rep["completed"] else (
-                            "⬜" if i >= today.day else "❌"
-                        )
-                        st.markdown(status_icon)
+                cols = len(dmo_report["days"])
 
+                text = '<div class="ch_box">'
+                for i in range(cols):
+                    rep = dmo_report["days"][i]
+                    status_icon = "✅" if rep["completed"] else (
+                        "⬜" if i >= date.today().day else "❌"
+                    )
+                    t = f'<span class="ch">{status_icon}</span>'
+                    text += t
+
+                text += '</div>'
+                st.markdown(text, unsafe_allow_html=True)
                 st.markdown("---")
 
     except api_client.APIError as e:
