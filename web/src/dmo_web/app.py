@@ -64,16 +64,62 @@ st.sidebar.caption("Daily Methods of Operation")
 # =============================================================================
 
 def show_today_page() -> None:
-    """Display today's dashboard with completion toggles."""
-    st.markdown('<div class="main-header">📅 Today\'s DMOs</div>', unsafe_allow_html=True)
-    st.markdown(f"**{date.today().strftime('%A, %B %d, %Y')}**")
+    """Display dashboard with completion toggles for any date."""
+    st.markdown('<div class="main-header">📅 DMO Tracker</div>', unsafe_allow_html=True)
+
+    # Initialize session state for date persistence
+    if 'selected_date' not in st.session_state:
+        st.session_state.selected_date = date.today()
+
+    # Date selector row
+    col1, col2 = st.columns([2, 3])
+    with col1:
+        selected_date = st.date_input(
+            "View date",
+            value=st.session_state.selected_date,
+            max_value=date.today() + timedelta(days=365),
+            help="Select any date to view/mark completions"
+        )
+        if selected_date != st.session_state.selected_date:
+            st.session_state.selected_date = selected_date
+            st.rerun()
+
+    with col2:
+        # Quick navigation buttons
+        col_prev, col_today, col_next = st.columns(3)
+        with col_prev:
+            if st.button("⬅️ Prev"):
+                st.session_state.selected_date -= timedelta(days=1)
+                st.rerun()
+        with col_today:
+            if st.button("📅 Today"):
+                st.session_state.selected_date = date.today()
+                st.rerun()
+        with col_next:
+            if st.button("Next ➡️"):
+                st.session_state.selected_date += timedelta(days=1)
+                st.rerun()
+
+    # Display selected date with context
+    selected_date = st.session_state.selected_date
+    is_today = selected_date == date.today()
+    if is_today:
+        st.markdown(f"**{selected_date.strftime('%A, %B %d, %Y')} (TODAY)**")
+    else:
+        st.markdown(f"**{selected_date.strftime('%A, %B %d, %Y')}**")
+        delta = (date.today() - selected_date).days
+        if delta > 0:
+            st.info(f"🕒 Viewing past date: {delta} day{'s' if delta > 1 else ''} ago")
+        else:
+            st.info(f"🔮 Viewing future date: {abs(delta)} day{'s' if abs(delta) > 1 else ''} ahead")
+
     st.markdown("---")
 
     try:
-        # Fetch today's report
-        today = date.today()
-        month_report = api_client.get_monthly_report(year=today.year, month=today.month)
-        report = api_client.get_today_report()
+        # Fetch report for selected date
+        selected_date = st.session_state.selected_date
+        month_report = api_client.get_monthly_report(year=selected_date.year, month=selected_date.month)
+        report = api_client.get_daily_report(selected_date)
         dmos_status = report.get("dmos", [])
 
         if not dmos_status:
@@ -103,10 +149,10 @@ def show_today_page() -> None:
                     if new_completed != completed:
                         try:
                             if new_completed:
-                                api_client.mark_complete(dmo["id"], date.today())
+                                api_client.mark_complete(dmo["id"], selected_date)
                                 st.success(f"✓ Marked '{dmo['name']}' as complete!")
                             else:
-                                api_client.mark_incomplete(dmo["id"], date.today())
+                                api_client.mark_incomplete(dmo["id"], selected_date)
                                 st.info(f"Marked '{dmo['name']}' as incomplete")
                             st.rerun()
                         except api_client.APIError as e:
