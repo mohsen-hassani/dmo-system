@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(source .venv/bin/activate)",
+      "Bash(pip install:*)",
+      "Bash(dmo --help:*)",
+      "Bash(dmo today:*)",
+      "Bash(mypy:*)",
+      "Bash(dmo list:*)",
+      "Bash(dmo complete:*)",
+      "Bash(dmo show:*)",
+      "Bash(uv sync:*)",
+      "Bash(~/.local/bin/uv sync)",
+      "Bash(uv run pytest:*)"
+    ]
+  },
+  "outputStyle": "Learning"
+}

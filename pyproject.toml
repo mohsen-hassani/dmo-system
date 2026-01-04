@@ -1,0 +1,21 @@
+[project]
+name = "dmo-app"
+version = "0.1.0"
+description = "DMO - Daily Methods of Operation tracking system"
+requires-python = ">=3.11"
+
+# This is a workspace root - it doesn't have dependencies itself
+# Each workspace member has its own dependencies
+
+[tool.uv.workspace]
+members = ["core", "cli", "api", "web"]
+
+# Shared development dependencies across all Python projects
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "pytest-cov>=4.0",
+    "mypy>=1.8",
+    "ruff>=0.3",
+]

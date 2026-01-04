@@ -1,0 +1,95 @@
+services:
+  # ===========================================================================
+  # PostgreSQL Database
+  # ===========================================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: dmo-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-dmo}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dmopass}
+      POSTGRES_DB: ${POSTGRES_DB:-dmo}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-dmo}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - dmo-network
+
+  # ===========================================================================
+  # API Service (FastAPI + Uvicorn)
+  # ===========================================================================
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    container_name: dmo-api
+    environment:
+      STORAGE_BACKEND: postgres
+      DATABASE_URL: postgresql://${POSTGRES_USER:-dmo}:${POSTGRES_PASSWORD:-dmopass}@postgres:5432/${POSTGRES_DB:-dmo}
+    ports:
+      - "${API_PORT:-8000}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - dmo-network
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\" || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ===========================================================================
+  # Web UI Service (Streamlit)
+  # ===========================================================================
+  web:
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+    container_name: dmo-web
+    environment:
+      DMO_API_URL: ${API_URL:-http://api:8000}
+    ports:
+      - "${WEB_PORT:-8501}:8501"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - dmo-network
+
+  # ===========================================================================
+  # CLI Service (for one-off commands)
+  # ===========================================================================
+  cli:
+    build:
+      context: .
+      dockerfile: cli/Dockerfile
+    container_name: dmo-cli
+    environment:
+      STORAGE_BACKEND: postgres
+      DATABASE_URL: postgresql://${POSTGRES_USER:-dmo}:${POSTGRES_PASSWORD:-dmopass}@postgres:5432/${POSTGRES_DB:-dmo}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - dmo-network
+    profiles:
+      - cli  # Only start when explicitly requested with --profile cli
+
+volumes:
+  postgres-data:
+    driver: local
+
+networks:
+  dmo-network:
+    driver: bridge

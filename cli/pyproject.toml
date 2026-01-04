@@ -1,0 +1,56 @@
+[project]
+name = "dmo-cli"
+version = "0.1.0"
+description = "A command-line interface for DMO Core."
+requires-python = ">=3.11"
+dependencies = [
+    "dmo-core",
+    "typer>=0.12.0,<1.0",
+    "rich>=13.0.0,<14.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "pytest-cov>=4.0",
+    "mypy>=1.8",
+    "ruff>=0.3",
+]
+
+[tool.uv.sources]
+dmo-core = { workspace = true }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/dmo_cli"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+asyncio_default_fixture_loop_scope = "function"
+
+[tool.mypy]
+strict = true
+python_version = "3.11"
+
+[[tool.mypy.overrides]]
+module = "main"
+disallow_untyped_decorators = false
+
+[[tool.mypy.overrides]]
+module = ["typer", "rich", "rich.*"]
+ignore_missing_imports = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP", "B", "C4", "SIM"]
+
+[project.scripts]
+dmo = "dmo_cli.main:app"
