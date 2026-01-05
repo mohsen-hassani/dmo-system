@@ -142,7 +142,7 @@ def show_today_page() -> None:
                     new_completed = st.checkbox(
                         "Done",
                         value=completed,
-                        key=f"checkbox_{dmo['id']}",
+                        key=f"checkbox_{dmo['id']}_{st.session_state.selected_date}",
                     )
 
                     # If checkbox changed, update completion
